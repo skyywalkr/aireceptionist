@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus AI - Cyberpunk Receptionist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0e27;
+            color: #00ff88;
+            position: relative;
+        }
+
+        /* Animated background */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(0deg, transparent 24%, rgba(0, 255, 136, 0.05) 25%, rgba(0, 255, 136, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 136, 0.05) 75%, rgba(0, 255, 136, 0.05) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(0, 255, 136, 0.05) 25%, rgba(0, 255, 136, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 255, 136, 0.05) 75%, rgba(0, 255, 136, 0.05) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            opacity: 0.3;
+            pointer-events: none;
+            animation: gridMove 8s linear infinite;
+            z-index: 1;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(50px); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            width: 90%;
+            max-width: 500px;
+            padding: 40px;
+            background: rgba(10, 14, 39, 0.9);
+            border: 2px solid #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), inset 0 0 20px rgba(0, 255, 136, 0.1);
+            position: relative;
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00ff88, #ff00ff, #00ff88);
+            z-index: -1;
+            opacity: 0;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.3; }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: flicker 0.1s infinite;
+        }
+
+        .logo h1 {
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .logo .subtitle {
+            font-size: 12px;
+            color: #00aa55;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            10%, 20%, 40%, 50%, 70%, 80% { opacity: 0.95; }
+            30%, 60%, 90% { opacity: 1; }
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+            margin: 30px 0;
+        }
+
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+            color: #00cc66;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: 2px solid #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 255, 136, 0.2);
+            transition: left 0.3s;
+            z-index: -1;
+        }
+
+        .btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5), inset 0 0 15px rgba(0, 255, 136, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn.primary {
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .btn.secondary {
+            border-color: #ff00ff;
+            color: #ff00ff;
+            background: rgba(255, 0, 255, 0.05);
+        }
+
+        .btn.secondary:hover {
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.5), inset 0 0 15px rgba(255, 0, 255, 0.1);
+        }
+
+        .status-text {
+            text-align: center;
+            font-size: 12px;
+            color: #00aa55;
+            letter-spacing: 1px;
+        }
+
+        .scan-line {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 255, 136, 0.8);
+            animation: scanLine 6s linear infinite;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        @keyframes scanLine {
+            0% { top: 0; }
+            100% { top: 100vh; }
+        }
+
+        .corner-accent {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border: 2px solid #00ff88;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .corner-tl {
+            top: 20px;
+            left: 20px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .corner-tr {
+            top: 20px;
+            right: 20px;
+            border-left: none;
+            border-bottom: none;
+        }
+
+        .corner-bl {
+            bottom: 20px;
+            left: 20px;
+            border-right: none;
+            border-top: none;
+        }
+
+        .corner-br {
+            bottom: 20px;
+            right: 20px;
+            border-left: none;
+            border-top: none;
+        }
+
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /></filter><rect width="100" height="100" fill="black" filter="url(%23noise)" /></svg>');
+            opacity: 0.02;
+            z-index: 4;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: rgba(10, 14, 39, 0.95);
+            padding: 40px;
+            border: 2px solid #00ff88;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+            animation: modalSlide 0.4s ease-out;
+        }
+
+        @keyframes modalSlide {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-content h2 {
+            color: #00ff88;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #00ff88;
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #00ff88;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .form-group input::placeholder {
+            color: #00aa55;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .modal-btn:hover {
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .close-btn {
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .error-message {
+            color: #ff0000;
+            font-size: 12px;
+            margin-top: 8px;
+            text-shadow: 0 0 5px #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="scan-line"></div>
+    <div class="noise"></div>
+
+    <div class="corner-accent corner-tl"></div>
+    <div class="corner-accent corner-tr"></div>
+    <div class="corner-accent corner-bl"></div>
+    <div class="corner-accent corner-br"></div>
+
+    <div class="container">
+        <div class="card">
+            <div class="logo">
+                <h1>⬥ NEXUS</h1>
+                <div class="subtitle">AI RECEPTIONIST</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="description">
+                Welcome to the future of customer service. Autonomous, intelligent, always on.
+            </div>
+
+            <div class="button-group">
+                <button class="btn primary" onclick="openModal('signup')">SIGN UP</button>
+                <button class="btn secondary" onclick="openModal('login')">LOG IN</button>
+            </div>
+
+            <div class="status-text">
+                > SYSTEM ONLINE
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div id="signup-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('signup')">&times;</span>
+            <h2>CREATE ACCOUNT</h2>
+
+            <form id="signup-form" onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="your@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Company Name (Optional)</label>
+                    <input type="text" name="company" placeholder="Your Company">
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" name="password_confirm" placeholder="••••••••" required>
+                </div>
+
+                <div id="signup-error" class="error-message" style="display: none;"></div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn" onclick="closeModal('signup')">CANCEL</button>
+                    <button type="submit" class="modal-btn">REGISTER</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('login')">&times;</span>
+            <h2>ACCESS NEXUS</h2>
+
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="your@email.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+
+                <div id="login-error" class="error-message" style="display: none;"></div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn" onclick="closeModal('login')">CANCEL</button>
+                    <button type="submit" class="modal-btn">ENTER SYSTEM</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(type) {
+            const modalId = type === 'signup' ? 'signup-modal' : 'login-modal';
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(type) {
+            const modalId = type === 'signup' ? 'signup-modal' : 'login-modal';
+            document.getElementById(modalId).classList.remove('active');
+            // Clear error messages
+            document.getElementById(type + '-error').style.display = 'none';
+        }
+
+        function handleSignup(event) {
+            event.preventDefault();
+            const form = document.getElementById('signup-form');
+            const email = form.email.value;
+            const password = form.password.value;
+            const passwordConfirm = form.password_confirm.value;
+            const company = form.company.value;
+            const errorEl = document.getElementById('signup-error');
+
+            if (password !== passwordConfirm) {
+                errorEl.textContent = '> ERROR: Passwords do not match';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            fetch('/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    password: password,
+                    company_name: company
+                }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    errorEl.textContent = `> ERROR: ${data.error}`;
+                    errorEl.style.display = 'block';
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            })
+            .catch(err => {
+                errorEl.textContent = `> ERROR: ${err.message}`;
+                errorEl.style.display = 'block';
+            });
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const form = document.getElementById('login-form');
+            const email = form.email.value;
+            const password = form.password.value;
+            const errorEl = document.getElementById('login-error');
+
+            fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    errorEl.textContent = `> ERROR: ${data.error}`;
+                    errorEl.style.display = 'block';
+                } else {
+                    window.location.href = '/dashboard';
+                }
+            })
+            .catch(err => {
+                errorEl.textContent = `> ERROR: ${err.message}`;
+                errorEl.style.display = 'block';
+            });
+        }
+
+        // Close modal on background click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    const type = modal.id.includes('signup') ? 'signup' : 'login';
+                    closeModal(type);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

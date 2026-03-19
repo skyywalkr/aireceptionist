@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nexus.ai-receptionist</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/nexus/venv/bin/python</string>
+        <string>/opt/nexus/app.py</string>
+    </array>
+
+    <key>UserName</key>
+    <string>nexus</string>
+
+    <key>GroupName</key>
+    <string>nexus</string>
+
+    <key>WorkingDirectory</key>
+    <string>/opt/nexus</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/nexus/venv/bin:/usr/local/bin:/usr/bin</string>
+        <key>PYTHONUNBUFFERED</key>
+        <string>1</string>
+        <key>FLASK_ENV</key>
+        <string>production</string>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/nexus/nexus.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/var/log/nexus/nexus.error.log</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65536</integer>
+        <key>NumberOfProcesses</key>
+        <integer>512</integer>
+    </dict>
+
+    <key>HardResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65536</integer>
+        <key>NumberOfProcesses</key>
+        <integer>512</integer>
+    </dict>
+</dict>
+</plist>

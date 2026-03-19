@@ -1,0 +1,21 @@
+[Unit]
+Description=Asterisk Flask AI Receptionist
+After=network.target asterisk.service
+Wants=asterisk.service
+
+[Service]
+Type=simple
+User=asterisk
+Group=asterisk
+WorkingDirectory=/opt/ai-receptionist
+Environment="PATH=/opt/ai-receptionist/.venv/bin"
+EnvironmentFile=/opt/ai-receptionist/.env
+ExecStart=/opt/ai-receptionist/.venv/bin/python app.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-receptionist
+
+[Install]
+WantedBy=multi-user.target
