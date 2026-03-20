@@ -38,7 +38,16 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-import ari
+
+# ARI (Asterisk REST Interface) - only available on Linux with Asterisk installed
+# On macOS/dev machines, this will gracefully fall back
+try:
+    import ari
+    HAS_ARI = True
+except ImportError:
+    HAS_ARI = False
+    logging.warning('⚠️  ARI not available - Asterisk integration disabled. Install on Linux with Asterisk.')
+
 import openai
 from ai_receptionist import (
     generate_receptionist_greeting,
@@ -93,8 +102,16 @@ ARI_APP = os.environ.get('ARI_APP_NAME', 'ai_receptionist')
 PJSIP_TRUNK = os.environ.get('PJSIP_TRUNK_NAME', 'trunk')
 ASTERISK_SOUNDS_DIR = os.environ.get('ASTERISK_SOUNDS_DIR', '/var/lib/asterisk/sounds/custom')
 
-# Connect to ARI
-client = ari.connect(ARI_URL, ARI_USER, ARI_PASS)
+# Connect to ARI (only on systems with Asterisk installed)
+client = None
+if HAS_ARI:
+    try:
+        client = ari.connect(ARI_URL, ARI_USER, ARI_PASS)
+        app.logger.info(f"✅ ARI Connected to {ARI_URL}")
+    except Exception as e:
+        app.logger.error(f"❌ ARI Connection failed: {e}")
+else:
+    app.logger.warning('⚠️  ARI not available - Asterisk integration disabled')
 
 # Track active channels and their state
 channel_state = {}
@@ -197,17 +214,27 @@ def stasis_start(event, channel_obj):
         app.logger.exception('Error in stasis_start: %s', e)
 
 
-client.on_event('StasisStart', stasis_start)
+# Register ARI event handler (only if ARI is available)
+if HAS_ARI and client:
+    client.on_event('StasisStart', stasis_start)
 
 
 def run_ari_loop():
     """Run ARI event loop (blocking)."""
+    if not HAS_ARI or not client:
+        app.logger.warning('⚠️  Skipping ARI event loop - ARI not available')
+        return
     app.logger.info('Starting ARI event loop')
-    client.run(apps=[ARI_APP])
+    try:
+        client.run(apps=[ARI_APP])
+    except Exception as e:
+        app.logger.error('ARI event loop error: %s', e)
 
 
-ari_thread = threading.Thread(target=run_ari_loop, daemon=True)
-ari_thread.start()
+ari_thread = None
+if HAS_ARI and client:
+    ari_thread = threading.Thread(target=run_ari_loop, daemon=True)
+    ari_thread.start()
 
 
 @app.route('/call', methods=['POST'])
@@ -288,6 +315,9 @@ def originate_call():
             app.logger.warning('Failed to generate greeting, continuing without')
 
     # Originate call
+    if not HAS_ARI or not client:
+        return jsonify({'error': 'Asterisk/ARI not available. Install on Linux with Asterisk.'}), 503
+    
     endpoint = f"PJSIP/{to}@{PJSIP_TRUNK}"
     variables = {
         'greeting_file': greeting_file_var or '',

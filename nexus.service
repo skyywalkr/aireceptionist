@@ -5,7 +5,7 @@ After=network-online.target asterisk.service
 Wants=network-online.target
 
 [Service]
-Type=notify
+Type=simple
 User=nexus
 Group=nexus
 WorkingDirectory=/opt/nexus
@@ -13,8 +13,8 @@ Environment="PATH=/opt/nexus/venv/bin:/usr/local/bin:/usr/bin"
 Environment="PYTHONUNBUFFERED=1"
 Environment="FLASK_ENV=production"
 
-# Load secrets from /etc/nexus/.env
-EnvironmentFile=/etc/nexus/.env
+# Load secrets from /etc/nexus/.env (optional - won't fail if missing)
+EnvironmentFile=-/etc/nexus/.env
 
 # Security hardening
 NoNewPrivileges=true
@@ -26,7 +26,7 @@ ReadWritePaths=/var/lib/nexus /var/log/nexus
 # Resource limits
 LimitNOFILE=65536
 LimitNPROC=512
-MemoryLimit=1G
+MemoryMax=1G
 CPUQuota=50%
 
 # Restart policy
