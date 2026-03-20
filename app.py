@@ -75,8 +75,17 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 
-# Database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///receptionist.db')
+# Database configuration - with fallback to SQLite if DATABASE_URL is invalid
+database_url = os.environ.get('DATABASE_URL', 'sqlite:////var/lib/nexus/receptionist.db')
+try:
+    # Validate that the URL is parseable by SQLAlchemy
+    from sqlalchemy import engine
+    engine.url.make_url(database_url)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+except Exception as e:
+    app.logger.warning(f'⚠️  Invalid DATABASE_URL "{database_url}", falling back to SQLite: {e}')
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/lib/nexus/receptionist.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-production')
 if app.config['SECRET_KEY'] == 'dev-secret-change-in-production':
