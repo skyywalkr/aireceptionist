@@ -1,10 +1,18 @@
 """
 ElevenLabs TTS integration with voice management.
 
+OPTIONAL MODULE - Gracefully degrades if ELEVENLABS_API_KEY is missing.
+
 Provides:
 - Voice listing and import from ElevenLabs
 - Text-to-speech synthesis via ElevenLabs API
 - Automatic WAV conversion for Asterisk compatibility
+
+API Key Behavior:
+- Without ELEVENLABS_API_KEY: get_available_voices() returns empty list, synthesize_text_elevenlabs() returns None (app falls back to gTTS)
+- With ELEVENLABS_API_KEY: full ElevenLabs features enabled
+
+Note: All functions check for API key and return None/[] gracefully if missing.
 """
 import os
 import subprocess

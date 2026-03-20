@@ -1,11 +1,17 @@
 """
 AI helper: record, transcribe, generate replies, and produce Asterisk-compatible audio.
 
+OPTIONAL MODULE - Gracefully degrades if OPENAI_API_KEY is missing.
+
 This module provides:
-- `generate_receptionist_greeting(destination)`: create initial greeting TTS audio
-- `transcribe_caller_audio(audio_path)`: convert caller recording to text via Whisper
-- `generate_ai_reply(caller_text)`: ask AI for a receptionist response
-- `generate_tts_wav(text)`: create TTS audio and convert to Asterisk-compatible WAV
+- `generate_receptionist_greeting(destination)`: create initial greeting TTS audio (uses gTTS or OpenAI)
+- `transcribe_caller_audio(audio_path)`: convert caller recording to text via Whisper (requires OPENAI_API_KEY)
+- `generate_ai_reply(caller_text)`: ask AI for a receptionist response (requires OPENAI_API_KEY)
+- `_generate_tts_wav(text)`: create TTS audio via gTTS and convert to Asterisk-compatible WAV (always works)
+
+API Key Behavior:
+- Without OPENAI_API_KEY: greeting is static, transcription returns empty string, AI replies return fallback message
+- With OPENAI_API_KEY: full AI features enabled
 
 Notes:
 - Generates MP3 via gTTS, then converts to WAV (8kHz mono, ulaw) via ffmpeg.

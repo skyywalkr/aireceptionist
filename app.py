@@ -59,6 +59,13 @@ from pricing import estimate_call_cost
 from elevenlabs_tts import get_available_voices, synthesize_text_elevenlabs
 from models import db, User, CallLog
 
+# ===== OPTIONAL MODULE NOTES =====
+# OpenAI & ElevenLabs are OPTIONAL and gracefully degrade if keys are missing:
+#   - OPENAI_API_KEY: If missing, uses static greetings and basic transcription fallback
+#   - ELEVENLABS_API_KEY: If missing, falls back to gTTS for TTS
+# The server will start and function even without these keys.
+# Features will simply degrade gracefully.
+
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -286,24 +293,36 @@ def originate_call():
     if use_ai and os.environ.get('ENABLE_AI', 'false').lower() in ('1', 'true', 'yes'):
         app.logger.info('Generating AI greeting with %s/%s', llm_model, tts_provider)
 
-        # Generate greeting text via AI
-        prompt = "You are a professional phone receptionist. Produce a short (one-sentence) friendly greeting when answering an incoming call. Introduce the company and ask how you can help. Keep it brief and natural."
-        try:
-            resp = openai.ChatCompletion.create(
-                model=llm_model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=80,
-                temperature=0.6,
-            )
-            greeting_text = resp['choices'][0]['message']['content'].strip()
-        except Exception as e:
-            app.logger.error('Error generating greeting: %s', e)
+        # Check if OpenAI API key is available
+        if not os.environ.get('OPENAI_API_KEY'):
+            app.logger.warning('OpenAI API key not set - using static greeting')
             greeting_text = "Hello, thank you for calling. How can I help?"
+        else:
+            # Generate greeting text via AI
+            prompt = "You are a professional phone receptionist. Produce a short (one-sentence) friendly greeting when answering an incoming call. Introduce the company and ask how you can help. Keep it brief and natural."
+            try:
+                resp = openai.ChatCompletion.create(
+                    model=llm_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=80,
+                    temperature=0.6,
+                )
+                greeting_text = resp['choices'][0]['message']['content'].strip()
+            except Exception as e:
+                app.logger.error('Error generating greeting: %s', e)
+                greeting_text = "Hello, thank you for calling. How can I help?"
 
         # Generate speech
         if tts_provider == 'elevenlabs':
-            app.logger.info('Using ElevenLabs for TTS')
-            greeting_file_var = synthesize_text_elevenlabs(greeting_text, elevenlabs_voice)
+            if not os.environ.get('ELEVENLABS_API_KEY'):
+                app.logger.warning('ElevenLabs API key not set - falling back to gTTS')
+                greeting_file_var = _generate_tts_wav(greeting_text)
+            else:
+                app.logger.info('Using ElevenLabs for TTS')
+                greeting_file_var = synthesize_text_elevenlabs(greeting_text, elevenlabs_voice)
+                if not greeting_file_var:
+                    app.logger.warning('ElevenLabs TTS failed - falling back to gTTS')
+                    greeting_file_var = _generate_tts_wav(greeting_text)
         else:
             # Default to gTTS
             app.logger.info('Using gTTS for TTS')
